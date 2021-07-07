@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const MongoClient = require('mongodb').MongoClient;
+const ObjectId = require('mongodb').ObjectID;
 
 app.use(express.json());
 
@@ -55,10 +56,11 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
         })
     });
 
-    app.delete('/contacts/delete', (req, res) => {
-        contactsCollection.deleteOne({
-            _id : req.body.id
-        });
+    app.get('/contacts/delete/:_id', (req, res) => {
+        contactsCollection.deleteOne({_id: new ObjectId(req.params['_id'])}, (err, obj) => {
+            if (err) throw err;
+            res.send('1 document deleted');
+        })
     });
 });
 
@@ -68,6 +70,10 @@ app.get('/', (req, res) => {
 
 app.get('/smile', (req, res) => {
     res.send(':D');
+});
+
+app.get('/sad', (req, res) => {
+    res.send(':(');
 });
 
 const port = process.env.PORT || 3000;
