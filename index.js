@@ -54,6 +54,12 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
             else res.json(result);
         })
     });
+
+    app.delete('/contacts/delete', (req, res) => {
+        contactsCollection.deleteOne({
+            _id : req.body.id
+        });
+    });
 });
 
 app.get('/', (req, res) => {
