@@ -56,10 +56,22 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
         })
     });
 
-    app.get('/contacts/delete/:_id', (req, res) => {
-        contactsCollection.deleteOne({_id: new ObjectId(req.params['_id'])}, (err, obj) => {
+    app.delete('/contacts/delete/:_id', (req, res) => {
+        contactsCollection.deleteOne({_id: new ObjectId(req.params['_id'])}, (err) => {
             if (err) throw err;
             res.send('1 document deleted');
+        })
+    });
+
+    app.put('/contacts/:_id', (req, res) => {
+        const contact = {
+            last_name: req.body.last_name,
+            first_name: req.body.first_name,
+            phone_numbers: req.body.phone_numbers
+        };
+        contactsCollection.updateOne({_id: new ObjectId(req.params['_id'])}, {$set: contact}, (err) => {
+            if(err) throw err;
+            res.send('Update Successful');
         })
     });
 });
