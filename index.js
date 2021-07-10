@@ -33,7 +33,7 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
     });
 
     app.get('/contacts', (req, res) => {
-        contactsCollection.find({}).toArray((err, result) => {
+        contactsCollection.find({}).sort({first_name: 1}).toArray((err, result) => {
             if (err) throw err;
             res.send(result);
         });
@@ -50,7 +50,7 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
     });
 
     app.get('/contacts/total', (req, res) => {
-        contactsCollection.count({}, (err, result) => {
+        contactsCollection.countDocuments({}, (err, result) => {
             if(err) res.send(err);
             else res.json(result);
         })
