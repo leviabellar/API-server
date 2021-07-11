@@ -1,9 +1,11 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
 const MongoClient = require('mongodb').MongoClient;
 const ObjectId = require('mongodb').ObjectID;
 
 app.use(express.json());
+app.use(cors());
 
 MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw.mongodb.net/test?retryWrites=true&w=majority', {useUnifiedTopology: true}, (err, client) => {
     if (err) throw err;
