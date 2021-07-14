@@ -41,6 +41,13 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
         });
     });
 
+    app.get('/:id', (req, res) => {
+        contactsCollection.find({_id: ObjectId(req.params['id'])}).toArray((err, result) => {
+            if (err) throw err;
+            res.send(result[0]);
+        });
+    });
+
     app.post('/contacts', (req, res) => {
         const contact = {
             last_name: req.body.last_name,
@@ -75,6 +82,27 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
             if(err) throw err;
             res.send('Update Successful');
         })
+    });
+
+    app.put('/contacts/last_name/:last_name', (req, res) => {
+        contactsCollection.updateOne({last_name: req.params['last_name']}, {$set: {last_name: req.body.last_name}}, (err) => {
+            if(err) throw err; 
+            res.send('Succesful')
+        });
+    });
+
+    app.put('/contacts/first_name/:first_name', (req, res) => {
+        contactsCollection.updateOne({first_name: req.params['first_name']}, {$set: {first_name: req.body.first_name}}, (err) => {
+            if(err) throw err; 
+            res.send('Succesful')
+        });
+    });
+
+    app.put('/contacts/phone_numbers/:phone_numbers', (req, res) => {
+        contactsCollection.updateOne({phone_numbers: req.params['last_name']}, {$set: {last_name: req.body.last_name}}, (err) => {
+            if(err) throw err; 
+            res.send('Succesful')
+        });
     });
 });
 
