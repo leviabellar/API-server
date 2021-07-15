@@ -9,6 +9,7 @@ const ExtractJWT = require('passport-jwt').ExtractJwt;
 const app = express();
 const MongoClient = require('mongodb').MongoClient;
 const ObjectId = require('mongodb').ObjectID;
+const { json } = require('express');
 
 app.use(express.json());
 app.use(cors());
@@ -86,17 +87,18 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
         },
         async (email, password, done) => {
             try {
-                const user = await contactsCollection.find({ email });
-                if(!user) {
-                    return done(null, false, { message: 'User not found' });
-                }
+                usersCollection.findOne({ email }, (err, result) => {
+                    if(err) throw err;
+                    if (!result) return done(null, false, { message: 'User not found' });
+                    var user = result;
 
-                const validate = await contactsCollection.find({ email, password });
-                if(!validate) {
-                    return done(null, false, { message: 'Wrong password' });
-                }
-
-                return done(null, user, { message: 'Logged in Successfully' });
+                    usersCollection.findOne({ email, password }, (err, r) => {
+                        if(err) throw err;
+                        if(!r) return done(null, false, { message: 'Wrong password' });
+                        user = r;
+                        return done(null, user, { message: 'Logged in Successfully' });
+                    });
+                });
             } catch (error) {
                 return done(error);
             }
@@ -115,9 +117,8 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
     app.post('/login', async (req, res, next) => {
         passport.authenticate('login', async (err, user, info) => {
             try {
-                if (err || !user) {
-                    const error = new Error('An error occured');
-                    return next(error);
+                if (!user) {
+                    res.send(info);
                 }
 
                 req.login(user, { session: false }, async (error) => {
