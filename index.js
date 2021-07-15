@@ -1,5 +1,11 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const passport = require('passport');
+const localStrategy = require('passport-local').Strategy;
+const JWTstrategy = require('passport-jwt').Strategy;
+const ExtractJWT = require('passport-jwt').ExtractJwt;
+
 const app = express();
 const MongoClient = require('mongodb').MongoClient;
 const ObjectId = require('mongodb').ObjectID;
@@ -14,8 +20,19 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
     const beansCollection = dbProduct.collection('beans');
     const dbTask003 = client.db('task003');
     const contactsCollection = dbTask003.collection('contacts');
+    const usersCollection = dbTask003.collection('users');
     
-    app.post('/beans', (req, res) => {
+    app.post('/beans', verifyToken, (req, res) => {
+        jwt.verify(req.token, 'secret_key', (err, authData) => {
+            if(err) {
+                res.sendStatus(403);
+            } else {
+                res.json({
+                    message: "Post jasdklf", authData
+                });
+            }
+        });
+
         if (!req.body.name) return res.status(400).send('Must have name');
         if (!Number.isInteger(req.body.qty)) return res.status(400).send('Quantity must be an Integer');
 
@@ -26,6 +43,113 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
         beansCollection.insertOne(bean);
         res.send(bean);
     });
+
+    app.post('/guest', (req, res) => {
+        usersCollection.find({user: req.body.user, password: req.body.password}).toArray((err, result) => {
+            if (err) throw err;
+            
+        });
+    });
+
+    passport.use(
+        new JWTstrategy({
+            secretOrKey: 'A_VERY_SECRET_KEY',
+            jwtFromRequest: ExtractJWT.fromUrlQueryParameter('secret_token')
+        },
+        async (token, done) => {
+            try {
+                return done(null, token.user);
+            } catch (error) {
+                done(error);
+            }
+        })
+    );
+    
+    passport.use('signup', new localStrategy({
+        usernameField: 'email',
+        passwordField: 'password'
+    },
+    async (email, password, done) => {
+        try {
+            const user = usersCollection.insertOne({ email, password });
+
+            return done(null, user);
+        } catch (error) {
+            done(error);
+        }
+    }));
+
+    passport.use('login', new localStrategy(
+        {
+            usernameField: 'email',
+            passwordField: 'password'
+        },
+        async (email, password, done) => {
+            try {
+                const user = await contactsCollection.find({ email });
+                if(!user) {
+                    return done(null, false, { message: 'User not found' });
+                }
+
+                const validate = await contactsCollection.find({ email, password });
+                if(!validate) {
+                    return done(null, false, { message: 'Wrong password' });
+                }
+
+                return done(null, user, { message: 'Logged in Successfully' });
+            } catch (error) {
+                return done(error);
+            }
+        }
+    ));
+
+    app.post('/signup', passport.authenticate('signup', {session: false}),
+        async (req, res, next) => {
+            res.json({
+                message: 'Signup Successful',
+                user: req.user
+            });
+        }
+    );
+
+    app.post('/login', async (req, res, next) => {
+        passport.authenticate('login', async (err, user, info) => {
+            try {
+                if (err || !user) {
+                    const error = new Error('An error occured');
+                    return next(error);
+                }
+
+                req.login(user, { session: false }, async (error) => {
+                    if (error) return next(error);
+
+                    const body = { _id: user._id, email: user.email };
+                    const token = jwt.sign({ user: body }, 'A_VERY_SECRET_KEY');
+
+                    return res.json({ token });
+                });
+            } catch (error) {
+                return next(error);
+            }
+        })(req, res, next)
+    });
+    
+
+    // app.get('/profile', (req, res, next) => {
+    //     res.json({
+    //         message: 'Secret Route Entered',
+    //         user: req.user,
+    //         token: req.query.secret_token
+    //     });
+    // });
+
+    app.use('/user', passport.authenticate('jwt', { session: false }), ('/profile', (req, res, next) => {
+        res.json({
+            message: 'Secret Route Entered',
+            user: req.user,
+            token: req.query.secret_token
+        });
+    }));
 
     app.get('/beans', (req, res) => {
         dbProduct.collection('beans').find({}).toArray((err, result) => {
@@ -117,6 +241,17 @@ app.get('/smile', (req, res) => {
 app.get('/sad', (req, res) => {
     res.send(':(');
 });
+
+function verifyToken(req, res, next) {
+    const bearerHeader = req.headers['authorization'];
+    if(typeof bearerHeader !== "undefined") {
+        const bearerToken = bearerHeader.split(" ")[1];
+        req.token = bearerToken;
+        next();
+    } else {
+        res.sendStatus(403);
+    }
+}
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Listening on port ${port}`)); 
