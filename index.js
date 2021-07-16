@@ -1,4 +1,5 @@
 const express = require('express');
+const secureRouter = express.Router();
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
@@ -144,13 +145,17 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
     //     });
     // });
 
-    app.use('/user', passport.authenticate('jwt', { session: false }), ('/profile', (req, res, next) => {
-        res.json({
-            message: 'Secret Route Entered',
-            user: req.user,
-            token: req.query.secret_token
-        });
-    }));
+    secureRouter.get('/profile', (req, res, next) => {
+        res.json(
+            {
+                message: 'Secret Route Entered',
+                user: req.user,
+                token: req.query.secret_token
+            }
+        );
+    });
+
+    app.use('/user', passport.authenticate('jwt', { session: false }), secureRouter);
 
     app.get('/beans', (req, res) => {
         dbProduct.collection('beans').find({}).toArray((err, result) => {
