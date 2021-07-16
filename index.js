@@ -154,12 +154,42 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
         );
     });
 
+    secureRouter.post('/contacts', (req, res, next) => {
+        const contact = {
+            last_name: req.body.last_name,
+            first_name: req.body.first_name,
+            phone_numbers: req.body.phone_numbers
+        };
+        contactsCollection.insertOne(contact);
+        res.send(contact);
+    });
+
     secureRouter.get('/contacts', (req, res, next) => {
         contactsCollection.find({}).sort({first_name: 1}).toArray((err, result) => {
             if (err) throw err;
             res.send(result);
         });
     });
+
+    secureRouter.put('/contacts/:_id', (req, res, next) => {
+        const contact = {
+            last_name: req.body.last_name,
+            first_name: req.body.first_name,
+            phone_numbers: req.body.phone_numbers
+        };
+        contactsCollection.updateOne({_id: new ObjectId(req.params['_id'])}, {$set: contact}, (err) => {
+            if(err) throw err;
+            res.send('Update Successful');
+        })
+    });
+
+    secureRouter.delete('/contacts/:_id', (req, res, next) => {
+        contactsCollection.deleteOne({_id: new ObjectId(req.params['_id'])}, (err) => {
+            if (err) throw err;
+            res.send('1 document deleted');
+        })
+    });
+
 
     app.use('/user', passport.authenticate('jwt', { session: false }), secureRouter);
 
@@ -185,16 +215,6 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
     });
 
     app.post('/contacts', (req, res) => {
-        const contact = {
-            last_name: req.body.last_name,
-            first_name: req.body.first_name,
-            phone_numbers: req.body.phone_numbers
-        };
-        contactsCollection.insertOne(contact);
-        res.send(contact);
-    });
-
-    secureRouter.post('/contacts', (req, res) => {
         const contact = {
             last_name: req.body.last_name,
             first_name: req.body.first_name,
