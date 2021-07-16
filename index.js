@@ -127,7 +127,6 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
 
                     const body = { _id: user._id, email: user.email };
                     const token = jwt.sign({ user: body }, 'A_VERY_SECRET_KEY');
-
                     return res.json({ token });
                 });
             } catch (error) {
@@ -153,6 +152,13 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
                 token: req.query.secret_token
             }
         );
+    });
+
+    secureRouter.get('/contacts', (req, res, next) => {
+        contactsCollection.find({}).sort({first_name: 1}).toArray((err, result) => {
+            if (err) throw err;
+            res.send(result);
+        });
     });
 
     app.use('/user', passport.authenticate('jwt', { session: false }), secureRouter);
@@ -188,6 +194,16 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
         res.send(contact);
     });
 
+    secureRouter.post('/contacts', (req, res) => {
+        const contact = {
+            last_name: req.body.last_name,
+            first_name: req.body.first_name,
+            phone_numbers: req.body.phone_numbers
+        };
+        contactsCollection.insertOne(contact);
+        res.send(contact);
+    });
+
     app.get('/contacts/total', (req, res) => {
         contactsCollection.countDocuments({}, (err, result) => {
             if(err) res.send(err);
@@ -195,7 +211,7 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
         })
     });
 
-    app.delete('/contacts/delete/:_id', (req, res) => {
+    app.delete('/contacts/:_id', (req, res) => {
         contactsCollection.deleteOne({_id: new ObjectId(req.params['_id'])}, (err) => {
             if (err) throw err;
             res.send('1 document deleted');
