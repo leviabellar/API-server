@@ -171,6 +171,13 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
         });
     });
 
+    secureRouter.get('/:id', (req, res) => {
+        contactsCollection.find({_id: ObjectId(req.params['id'])}).toArray((err, result) => {
+            if (err) throw err;
+            res.send(result[0]);
+        });
+    });
+
     secureRouter.put('/contacts/:_id', (req, res, next) => {
         const contact = {
             last_name: req.body.last_name,
