@@ -75,10 +75,13 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
     async (email, password, done) => {
         try {
             bcrypt.hash(password, 10, (err, hash) => {
-                const password = hash;
-                usersCollection.insertOne({ email, password });
-                usersCollection.findOne({ email, password }, (err, result) => {
-                    return done(null, result);
+                usersCollection.findOne({ email }, (err, result) => {
+                    if(result) return done(null, {message: "Email Exist"});
+                    const password = hash;
+                    usersCollection.insertOne({ email, password });
+                    usersCollection.findOne({ email, password }, (err, result) => {
+                        return done(null, result);
+                    });
                 });
             });
         } catch (error) {
@@ -117,10 +120,7 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
 
     app.post('/signup', passport.authenticate('signup', {session: false}),
         async (req, res, next) => {
-            res.json({
-                message: 'Signup Successful',
-                user: req.user
-            });
+            res.json(req.user);
         }
     );
 
