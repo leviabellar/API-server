@@ -3,6 +3,7 @@ const secureRouter = express.Router();
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
+const bcrypt = require('bcrypt');
 const localStrategy = require('passport-local').Strategy;
 const JWTstrategy = require('passport-jwt').Strategy;
 const ExtractJWT = require('passport-jwt').ExtractJwt;
@@ -73,9 +74,16 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
     },
     async (email, password, done) => {
         try {
-            const user = usersCollection.insertOne({ email, password });
-
-            return done(null, user);
+            bcrypt.hash(password, 10, (err, hash) => {
+                usersCollection.findOne({ email }, (err, result) => {
+                    if(result) return done(null, {message: "Email Exist"});
+                    const password = hash;
+                    usersCollection.insertOne({ email, password });
+                    usersCollection.findOne({ email, password }, (err, result) => {
+                        return done(null, result);
+                    });
+                });
+            });
         } catch (error) {
             done(error);
         }
@@ -93,11 +101,15 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
                     if (!result) return done(null, false, { message: 'User not found' });
                     var user = result;
 
-                    usersCollection.findOne({ email, password }, (err, r) => {
+                    // bcrypt.compare(password, 10, (err, result) => {
+
+                    // });
+                    usersCollection.findOne({ email }, (err, r) => {
                         if(err) throw err;
-                        if(!r) return done(null, false, { message: 'Wrong password' });
-                        user = r;
-                        return done(null, user, { message: 'Logged in Successfully' });
+                        bcrypt.compare(password, r.password, (err, result) => {
+                            if(!result) return done(null, false, { message: 'Wrong password' });
+                            return done(null, result, { message: 'Logged in Successfully' });
+                        });
                     });
                 });
             } catch (error) {
@@ -108,10 +120,7 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
 
     app.post('/signup', passport.authenticate('signup', {session: false}),
         async (req, res, next) => {
-            res.json({
-                message: 'Signup Successful',
-                user: req.user
-            });
+            res.json(req.user);
         }
     );
 
@@ -134,15 +143,6 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
             }
         })(req, res, next)
     });
-    
-
-    // app.get('/profile', (req, res, next) => {
-    //     res.json({
-    //         message: 'Secret Route Entered',
-    //         user: req.user,
-    //         token: req.query.secret_token
-    //     });
-    // });
 
     secureRouter.get('/profile', (req, res, next) => {
         res.json(
