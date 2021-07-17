@@ -3,6 +3,7 @@ const secureRouter = express.Router();
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
+const bcrypt = require('bcrypt');
 const localStrategy = require('passport-local').Strategy;
 const JWTstrategy = require('passport-jwt').Strategy;
 const ExtractJWT = require('passport-jwt').ExtractJwt;
@@ -73,9 +74,15 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
     },
     async (email, password, done) => {
         try {
-            const user = usersCollection.insertOne({ email, password });
+            console.log(password);
+            bcrypt.hash(password, 10, (err, hash) => {
+                console.log(hash);
+                usersCollection.insertOne({ email, hash });
 
-            return done(null, user);
+                usersCollection.findOne({ email, hash }, (err, result) => {
+                    return done(null, result);
+                });
+            });
         } catch (error) {
             done(error);
         }
