@@ -75,9 +75,9 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
     async (email, password, done) => {
         try {
             bcrypt.hash(password, 10, (err, hash) => {
-                usersCollection.insertOne({ email, hash });
-
-                usersCollection.findOne({ email, hash }, (err, result) => {
+                const password = hash;
+                usersCollection.insertOne({ email, password });
+                usersCollection.findOne({ email, password }, (err, result) => {
                     return done(null, result);
                 });
             });
@@ -103,8 +103,7 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
                     // });
                     usersCollection.findOne({ email }, (err, r) => {
                         if(err) throw err;
-                        console.log(r.hash);
-                        bcrypt.compare(password, r.hash, (err, result) => {
+                        bcrypt.compare(password, r.password, (err, result) => {
                             if(!result) return done(null, false, { message: 'Wrong password' });
                             return done(null, result, { message: 'Logged in Successfully' });
                         });
@@ -144,15 +143,6 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
             }
         })(req, res, next)
     });
-    
-
-    // app.get('/profile', (req, res, next) => {
-    //     res.json({
-    //         message: 'Secret Route Entered',
-    //         user: req.user,
-    //         token: req.query.secret_token
-    //     });
-    // });
 
     secureRouter.get('/profile', (req, res, next) => {
         res.json(
