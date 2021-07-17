@@ -74,9 +74,7 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
     },
     async (email, password, done) => {
         try {
-            console.log(password);
             bcrypt.hash(password, 10, (err, hash) => {
-                console.log(hash);
                 usersCollection.insertOne({ email, hash });
 
                 usersCollection.findOne({ email, hash }, (err, result) => {
@@ -100,11 +98,16 @@ MongoClient.connect('mongodb+srv://user001:user001-mongodb-basics@practice.54zqw
                     if (!result) return done(null, false, { message: 'User not found' });
                     var user = result;
 
-                    usersCollection.findOne({ email, password }, (err, r) => {
+                    // bcrypt.compare(password, 10, (err, result) => {
+
+                    // });
+                    usersCollection.findOne({ email }, (err, r) => {
                         if(err) throw err;
-                        if(!r) return done(null, false, { message: 'Wrong password' });
-                        user = r;
-                        return done(null, user, { message: 'Logged in Successfully' });
+                        console.log(r.hash);
+                        bcrypt.compare(password, r.hash, (err, result) => {
+                            if(!result) return done(null, false, { message: 'Wrong password' });
+                            return done(null, result, { message: 'Logged in Successfully' });
+                        });
                     });
                 });
             } catch (error) {
